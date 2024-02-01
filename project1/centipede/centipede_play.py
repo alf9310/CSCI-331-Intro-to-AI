@@ -1,6 +1,10 @@
 import argparse
 import sys
 import pdb
+import numpy as np
+import matplotlib.pyplot as plt
+from pylab import *
+from scipy.ndimage import measurements
 import gymnasium as gym
 from gymnasium import wrappers, logger
 
@@ -26,6 +30,61 @@ class Agent(object):
             See the Actions table at:
             https://gymnasium.farama.org/environments/atari/centipede/
         """
+
+        #new_array = observation.reshape((observation.shape[0] * observation.shape[1], 3))
+        #colors = {tuple(x) for x in new_array}
+
+        # Store the 8 level colors TODO
+        mushroom_colors = np.array([[181,83,40]])
+        centipede_colors = np.array([[184,70,162]])
+        spider_colors = np.array([[146,70,192]])
+        bar_colors = np.array([[110,156,66]])
+
+        # Use bar color to identify levels 0-7
+        bar_color = observation[183][16] # static location of bar
+        level = 0
+        for index, color in enumerate(bar_colors):
+            if (bar_color == color).all():
+                level = index
+
+        #CHANGE TODO
+        observation = observation[:, :, ::3]
+        #print(observation)
+        # Location where values are [(y,x), (y,x)]
+        '''
+        mushroom_loc = np.array(list(zip(*np.where(observation == mushroom_colors[level])[:2])))
+        centipede_loc = np.array(list(zip(*np.where(observation == centipede_colors[level])[:2])))
+        spider_loc = np.array(list(zip(*np.where(observation == spider_colors[level])[:2])))
+        '''
+        
+        # Locations where values are [y, y, y][x, x, x]
+        mushroom_loc = np.array(np.where(observation == mushroom_colors[level])[:2])
+        centipede_loc = np.array(np.where(observation == centipede_colors[level])[:2])
+        spider_loc = np.array(np.where(observation == spider_colors[level])[:2])
+
+        # Identify player location by checking size
+        player_loc = []
+        for y, x in zip(*mushroom_loc):
+            #print("(" + str(y) + "," + str(x) + ") ")
+            # Check if the region around the detected point is the player size
+            if np.sum(observation[y:y+9, x:x+4] == mushroom_colors[level]) >= 36:
+                player_loc.append((y, x))
+        
+        player_loc = np.array(player_loc)
+        print(player_loc)
+
+        # Sanity check graph
+        plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
+        plt.scatter(centipede_loc[1], centipede_loc[0], alpha=.5, color="pink")
+        #plt.scatter(player_loc[1], player_loc[0], alpha=.5, color="blue")
+        plt.scatter(player_loc[:, 1], player_loc[:, 0], alpha=.5, color="blue")
+        plt.scatter(spider_loc[1], spider_loc[0], alpha=.5, color="purple")
+        plt.title('level = ' + str(level))
+        plt.gca().invert_yaxis()
+        plt.show()
+
+        breakpoint()
+
         return self.action_space.sample()
 
 ## YOU MAY NOT MODIFY ANYTHING BELOW THIS LINE OR USE
