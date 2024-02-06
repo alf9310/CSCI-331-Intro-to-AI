@@ -73,12 +73,9 @@ class Agent(object):
                 # player_loc.append((y, x))
                 player_loc.append(y)
                 player_loc.append(x)
-                # print(player_loc[0])
-                # print(player_loc[1])
 
         # player_loc = np.array(player_loc)
         # print(player_loc)
-        # print(spider_loc)
         '''
         # Sanity check graph
         plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
@@ -97,16 +94,79 @@ class Agent(object):
 
         breakpoint()'''
 
-        '''for x in spider_loc[1]:
-            if x > player_loc[1]-4:
-                print("test")'''
+        # Focuses on avoiding the spider first
         if len(player_loc) != 0:
             for x in spider_loc[1]:
                 for y in spider_loc[0]:
                     if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
-                        print("boundary test")
+                        if x < player_loc[1]:
+                            # avoid by moving right
+                            return 3
+                        elif player_loc[1] + 3 < x:
+                            # avoid by moving left
+                            return 4
+                        elif y > player_loc[0] + 8:
+                            # avoid by moving up
+                            return 2
+                        elif player_loc[0] > y:
+                            # avoid by moving down and shooting
+                            return 13
+
+        # If available, shoot the spider
+        if len(player_loc) != 0:
+            for x in spider_loc[1]:
+                for y in spider_loc[0]:
+                    if player_loc[1] - 1 < x < player_loc[1] + 4 and player_loc[0] > y:
                         return 1
-        return self.action_space.sample()
+
+        # making notes here: so the way it's going through the centipede locations, it starts at
+        # the top of the grid and makes its way down, which means that the sprite is trying to
+        # fire at the centipede parts closest to the top of the screen rather than the one closest
+        # to itself/the bottom of the screen. I want to figure out a way to either reverse traverse
+        # the centipede's location OR to find all y points and aim for the one closest to the sprite
+
+        # More notes: while basic firing and avoidance has been implemented, edge cases still need
+        # defining for the literal edges of the screen. Basically, the agent needs to know that if
+        # it is at the right edge of the screen, and it's normal direction would be to move right to
+        # avoid an enemy, it should instead move up or down or something
+
+        # thanks for reading <3 -Thalia K
+
+        # Avoid the centipede if nearby
+        if len(player_loc) != 0:
+            for x in centipede_loc[1]:
+                for y in centipede_loc[0]:
+                    if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
+                        if x < player_loc[1]:
+                            # avoid by moving right
+                            return 6
+                        elif player_loc[1] + 3 < x:
+                            # avoid by moving left
+                            return 7
+                        elif y > player_loc[0] + 8:
+                            # avoid by moving up
+                            return 2
+                        elif player_loc[0] > y:
+                            # avoid by moving down and shooting
+                            return 13
+
+        # Fire at the centipede, if possible
+        if len(player_loc) != 0:
+            for x in centipede_loc[1]:
+                for y in centipede_loc[0]:
+                    if player_loc[0] > y and player_loc[1]-2 < x < player_loc[1]+5:
+                        # print("fire")
+                        return 1
+                    elif player_loc[0] > y and x < player_loc[1] + 2:
+                        # print("left")
+                        return 4
+                    elif player_loc[0] > y and player_loc[1] + 1 < x:
+                        # print("right")
+                        return 3
+                    elif player_loc[0]+2 < y:
+                        return 5
+        return 0
+        # return self.action_space.sample()
 
 
 ## YOU MAY NOT MODIFY ANYTHING BELOW THIS LINE OR USE
