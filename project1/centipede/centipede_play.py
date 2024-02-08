@@ -37,10 +37,10 @@ class Agent(object):
         # colors = {tuple(x) for x in new_array}
 
         # Store the 8 level colors TODO
-        mushroom_colors = np.array([[181, 83, 40]])
-        centipede_colors = np.array([[184, 70, 162]])
-        spider_colors = np.array([[146, 70, 192]])
-        bar_colors = np.array([[110, 156, 66]])
+        mushroom_colors =   np.array([[181, 83, 40], [45, 50, 184], [187, 187, 53]])
+        centipede_colors =  np.array([[184, 70, 162], [184, 50, 50], [146, 70, 192]])
+        spider_colors =     np.array([[146, 70, 192], [110, 156, 66], [84, 138, 210]])
+        bar_colors =        np.array([[110, 156, 66], [66, 114, 194], [198, 108, 58]])
 
         # Use bar color to identify levels 0-7
         bar_color = observation[183][16]  # static location of bar
@@ -49,11 +49,11 @@ class Agent(object):
             if (bar_color == color).all():
                 level = index
 
-        # CHANGE TODO
+        # Remove duplicates from observation
         observation = observation[:, :, ::3]
-        # print(observation)
-        # Location where values are [(y,x), (y,x)]
+
         '''
+        # Location where values are [(y,x), (y,x)]
         mushroom_loc = np.array(list(zip(*np.where(observation == mushroom_colors[level])[:2])))
         centipede_loc = np.array(list(zip(*np.where(observation == centipede_colors[level])[:2])))
         spider_loc = np.array(list(zip(*np.where(observation == spider_colors[level])[:2])))
@@ -64,36 +64,43 @@ class Agent(object):
         centipede_loc = np.array(np.where(observation == centipede_colors[level])[:2])
         spider_loc = np.array(np.where(observation == spider_colors[level])[:2])
 
+        spider_loc = np.delete(spider_loc, [np.where(spider_loc == 183), np.where(spider_loc == 184)], axis=1)
+
         # Identify player location by checking size
         player_loc = []
         for y, x in zip(*mushroom_loc):
-            # print("(" + str(y) + "," + str(x) + ") ")
             # Check if the region around the detected point is the player size
             if np.sum(observation[y:y + 9, x:x + 4] == mushroom_colors[level]) >= 36:
-                # player_loc.append((y, x))
                 player_loc.append(y)
                 player_loc.append(x)
 
-        # player_loc = np.array(player_loc)
-        # print(player_loc)
+        spider_action = collision(player_loc, spider_loc)
+        if spider_action is not None:
+            return spider_action
+        centipede_action = collision(player_loc, centipede_loc)
+        if centipede_action is not None:
+            return centipede_action
+
         '''
+        if level == 1:
         # Sanity check graph
-        plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
-        plt.scatter(centipede_loc[1], centipede_loc[0], alpha=.5, color="pink")
-        #plt.scatter(player_loc[1], player_loc[0], alpha=.5, color="blue")
-        plt.scatter(player_loc[:, 1], player_loc[:, 0], alpha=.5, color="blue")
-        #plotting hitbox to see what would be a reasonable size
-        plt.scatter(player_loc[:, 1] - 4, player_loc[:, 0] - 4, alpha=.5, color="red")
-        plt.scatter(player_loc[:, 1] + 7, player_loc[:, 0] - 4, alpha=.5, color="red")
-        plt.scatter(player_loc[:, 1] - 4, player_loc[:, 0] + 12, alpha=.5, color="red")
-        plt.scatter(player_loc[:, 1] + 7, player_loc[:, 0] + 12, alpha=.5, color="red")
-        plt.scatter(spider_loc[1], spider_loc[0], alpha=.5, color="purple")
-        plt.title('level = ' + str(level))
-        plt.gca().invert_yaxis()
-        plt.show()
+            plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
+            plt.scatter(centipede_loc[1], centipede_loc[0], alpha=.5, color="pink")
+            if len(player_loc) >= 2:
+                plt.scatter(player_loc[1], player_loc[0], alpha=.5, color="blue")
+                #plotting hitbox to see what would be a reasonable size
+                #plt.scatter(player_loc[1] - 4, player_loc[0] - 4, alpha=.5, color="red")
+                #plt.scatter(player_loc[1] + 7, player_loc[0] - 4, alpha=.5, color="red")
+                #plt.scatter(player_loc[1] - 4, player_loc[0] + 12, alpha=.5, color="red")
+                #plt.scatter(player_loc[1] + 7, player_loc[0] + 12, alpha=.5, color="red")
+            plt.scatter(spider_loc[1], spider_loc[0], alpha=.5, color="purple")
+            plt.title('level = ' + str(level))
+            plt.gca().invert_yaxis()
+            plt.show()
+            #breakpoint()
+        '''
 
-        breakpoint()'''
-
+        '''
         # Focuses on avoiding the spider first
         if len(player_loc) != 0:
             for x in spider_loc[1]:
@@ -111,6 +118,7 @@ class Agent(object):
                         elif player_loc[0] > y:
                             # avoid by moving down and shooting
                             return 13
+        '''
 
         # If available, shoot the spider
         if len(player_loc) != 0:
@@ -132,6 +140,7 @@ class Agent(object):
 
         # thanks for reading <3 -Thalia K
 
+        '''
         # Avoid the centipede if nearby
         if len(player_loc) != 0:
             for x in centipede_loc[1]:
@@ -149,6 +158,7 @@ class Agent(object):
                         elif player_loc[0] > y:
                             # avoid by moving down and shooting
                             return 13
+        '''
 
         # Fire at the centipede, if possible
         if len(player_loc) != 0:
@@ -166,7 +176,26 @@ class Agent(object):
                     elif player_loc[0]+2 < y:
                         return 5
         return 0
+    
         # return self.action_space.sample()
+
+def collision(player_loc, enemy_loc):
+    if len(player_loc) != 0:
+        for x in enemy_loc[1]:
+            for y in enemy_loc[0]:
+                if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
+                    if x < player_loc[1]:
+                        # avoid by moving right
+                        return 6
+                    elif player_loc[1] + 3 < x:
+                        # avoid by moving left
+                        return 7
+                    elif y > player_loc[0] + 8:
+                        # avoid by moving up
+                        return 2
+                    elif player_loc[0] > y:
+                        # avoid by moving down and shooting
+                        return 13
 
 
 ## YOU MAY NOT MODIFY ANYTHING BELOW THIS LINE OR USE
