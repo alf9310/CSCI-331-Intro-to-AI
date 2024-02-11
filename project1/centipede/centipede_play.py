@@ -15,9 +15,6 @@ class Agent(object):
     def __init__(self, action_space):
         self.action_space = action_space
 
-    # You should modify this function
-    # You may define additional functions in this
-    # file or others to support it.
     def act(self, observation, reward, done):
         """Compute and action based on the current state.
 
@@ -33,10 +30,7 @@ class Agent(object):
             https://gymnasium.farama.org/environments/atari/centipede/
         """
 
-        # new_array = observation.reshape((observation.shape[0] * observation.shape[1], 3))
-        # colors = {tuple(x) for x in new_array}
-
-        # Store the 8 level colors TODO
+        # Store the 8 level colors
         mushroom_colors = np.array([[181, 83, 40], [45, 50, 184], [187, 187, 53], [184, 70, 162], [184, 50, 50]])
         centipede_colors = np.array([[184, 70, 162], [184, 50, 50], [146, 70, 192], [110, 156, 66], [84, 138, 210]])
         spider_colors = np.array([[146, 70, 192], [110, 156, 66], [84, 138, 210], [181, 83, 40], [45, 50, 184]])
@@ -52,23 +46,16 @@ class Agent(object):
         # Remove duplicates from observation
         observation = observation[:, :, ::3]
 
-        '''
-        # Location where values are [(y,x), (y,x)]
-        mushroom_loc = np.array(list(zip(*np.where(observation == mushroom_colors[level])[:2])))
-        centipede_loc = np.array(list(zip(*np.where(observation == centipede_colors[level])[:2])))
-        spider_loc = np.array(list(zip(*np.where(observation == spider_colors[level])[:2])))
-        '''
-
-        # Locations where values are [y, y, y][x, x, x]
+        # Sprite locations where values are [y, y, y][x, x, x]
         mushroom_loc = np.array(np.where(observation == mushroom_colors[level])[:2])
         centipede_loc = np.array(np.where(observation == centipede_colors[level])[:2])
         spider_loc = np.array(np.where(observation == spider_colors[level])[:2])
-
+        # Remove sprite observations below bar
         spider_loc = np.delete(spider_loc, [np.where(spider_loc == 183), np.where(spider_loc == 184)], axis=1)
         centipede_loc = np.delete(centipede_loc, [np.where(centipede_loc == 183), np.where(centipede_loc == 184)],
                                   axis=1)
 
-        # Identify player location by checking size
+        # Identify player location by checking size of the sprite
         player_loc = []
         for y, x in zip(*mushroom_loc):
             # Check if the region around the detected point is the player size
@@ -76,6 +63,7 @@ class Agent(object):
                 player_loc.append(y)
                 player_loc.append(x)
 
+        # Avoid the spider and centipede locations 
         spider_action = collision(player_loc, spider_loc)
         if spider_action is not None:
             return spider_action
@@ -83,121 +71,56 @@ class Agent(object):
         if centipede_action is not None:
             return centipede_action
 
-        '''print(level)
-        if level == 4:
-            # Sanity check graph
-            plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
-            plt.scatter(centipede_loc[1], centipede_loc[0], alpha=.5, color="pink")
-            if len(player_loc) >= 2:
-                plt.scatter(player_loc[1], player_loc[0], alpha=.5, color="blue")
-                #plotting hitbox to see what would be a reasonable size
-                #plt.scatter(player_loc[1] - 4, player_loc[0] - 4, alpha=.5, color="red")
-                #plt.scatter(player_loc[1] + 7, player_loc[0] - 4, alpha=.5, color="red")
-                #plt.scatter(player_loc[1] - 4, player_loc[0] + 12, alpha=.5, color="red")
-                #plt.scatter(player_loc[1] + 7, player_loc[0] + 12, alpha=.5, color="red")
-            plt.scatter(spider_loc[1], spider_loc[0], alpha=.5, color="purple")
-            plt.title('level = ' + str(level))
-            plt.gca().invert_yaxis()
-            plt.show()
-            #breakpoint()
-        '''
-
-        '''
-        # Focuses on avoiding the spider first
-        if len(player_loc) != 0:
-            for x in spider_loc[1]:
-                for y in spider_loc[0]:
-                    if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
-                        if x < player_loc[1]:
-                            # avoid by moving right
-                            return 3
-                        elif player_loc[1] + 3 < x:
-                            # avoid by moving left
-                            return 4
-                        elif y > player_loc[0] + 8:
-                            # avoid by moving up
-                            return 2
-                        elif player_loc[0] > y:
-                            # avoid by moving down and shooting
-                            return 13
-        '''
-
-        # If available, shoot the spider
+        # If possible, shoot the spider
         if len(player_loc) != 0:
             for x in flip(spider_loc[1]):
                 for y in flip(spider_loc[0]):
                     if player_loc[1] - 1 < x < player_loc[1] + 4 and player_loc[0] > y:
-                        return 1
-
-        # making notes here: so the way it's going through the centipede locations, it starts at
-        # the top of the grid and makes its way down, which means that the sprite is trying to
-        # fire at the centipede parts closest to the top of the screen rather than the one closest
-        # to itself/the bottom of the screen. I want to figure out a way to either reverse traverse
-        # the centipede's location OR to find all y points and aim for the one closest to the sprite
-
-        # More notes: while basic firing and avoidance has been implemented, edge cases still need
-        # defining for the literal edges of the screen. Basically, the agent needs to know that if
-        # it is at the right edge of the screen, and it's normal direction would be to move right to
-        # avoid an enemy, it should instead move up or down or something
-
-        # thanks for reading <3 -Thalia K
-
-        '''
-        # Avoid the centipede if nearby
-        if len(player_loc) != 0:
-            for x in centipede_loc[1]:
-                for y in centipede_loc[0]:
-                    if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
-                        if x < player_loc[1]:
-                            # avoid by moving right
-                            return 6
-                        elif player_loc[1] + 3 < x:
-                            # avoid by moving left
-                            return 7
-                        elif y > player_loc[0] + 8:
-                            # avoid by moving up
-                            return 2
-                        elif player_loc[0] > y:
-                            # avoid by moving down and shooting
-                            return 13
-        '''
-
+                        return 1 # Fire
+                    
+        # Line up with and shoot the centipede
         if len(player_loc) != 0:
             for x in flip(centipede_loc[1]):
                 for y in flip(centipede_loc[0]):
                     if player_loc[0] > y and player_loc[1] - 1 < x < player_loc[1] + 4:
-                        # print("fire")
-                        return 1
+                        return 1 # Fire
                     elif player_loc[0] > y and x < player_loc[1] + 2:
-                        # print("left")
-                        return 4
+                        return 4 # Left
                     elif player_loc[0] > y and player_loc[1] + 1 < x:
-                        # print("right")
-                        return 3
+                        return 3 # Right
                     elif player_loc[0] + 2 < y:
-                        return 5
-        return 0
-
-        # return self.action_space.sample()
+                        return 5 # Down
+                    
+        return self.action_space.sample() # Do random :)
 
 
 def collision(player_loc, enemy_loc):
+    """Avoid the location of the enemies.
+
+        Args:
+            player_loc: location of the upper left pixel of the player.
+                Format: [y, x]
+            enemy_loc: location of the enemy pixels.
+                Format: [[y, y, y, ...][x, x, x, ...]]
+
+        Returns:
+            A numerical code giving the action to take. See
+            See the Actions table at:
+            https://gymnasium.farama.org/environments/atari/centipede/
+        """
     if len(player_loc) != 0:
-        for x in flip(enemy_loc[1]):
+        for x in flip(enemy_loc[1]): # Search for lower enemies first
             for y in flip(enemy_loc[0]):
+                # Hitbox buffer
                 if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
                     if x < player_loc[1] and y > player_loc[0]:
-                        # avoid by moving right
-                        return 3
+                        return 3 # Right
                     elif player_loc[1] + 3 < x and y > player_loc[0]:
-                        # avoid by moving left
-                        return 4
+                        return 4 # Left
                     elif y > player_loc[0] + 8:
-                        # avoid by moving up
-                        return 2
+                        return 2 # Up
                     elif player_loc[0] > y:
-                        # avoid by moving down and shooting
-                        return 13
+                        return 13 # Down and shoot
 
 
 ## YOU MAY NOT MODIFY ANYTHING BELOW THIS LINE OR USE
