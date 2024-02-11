@@ -91,7 +91,7 @@ class Agent(object):
                     elif player_loc[0] + 2 < y:
                         return 5 # Down
                     
-        return self.action_space.sample() # Do random :)
+        return 1 # Fire
 
 
 def collision(player_loc, enemy_loc):
@@ -114,9 +114,9 @@ def collision(player_loc, enemy_loc):
                 # Hitbox buffer
                 if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
                     if x < player_loc[1] and y > player_loc[0]:
-                        return 3 # Right
+                        return 6 #Right and Up
                     elif player_loc[1] + 3 < x and y > player_loc[0]:
-                        return 4 # Left
+                        return 7 # Left and Up
                     elif y > player_loc[0] + 8:
                         return 2 # Up
                     elif player_loc[0] > y:
