@@ -37,10 +37,10 @@ class Agent(object):
         # colors = {tuple(x) for x in new_array}
 
         # Store the 8 level colors TODO
-        mushroom_colors =   np.array([[181, 83, 40], [45, 50, 184], [187, 187, 53], [184, 70, 162]])
-        centipede_colors =  np.array([[184, 70, 162], [184, 50, 50], [146, 70, 192], [110, 156, 66]])
-        spider_colors =     np.array([[146, 70, 192], [110, 156, 66], [84, 138, 210], [181, 83, 40]])
-        bar_colors =        np.array([[110, 156, 66], [66, 114, 194], [198, 108, 58], [66, 72, 200]])
+        mushroom_colors = np.array([[181, 83, 40], [45, 50, 184], [187, 187, 53], [184, 70, 162], [184, 50, 50]])
+        centipede_colors = np.array([[184, 70, 162], [184, 50, 50], [146, 70, 192], [110, 156, 66], [84, 138, 210]])
+        spider_colors = np.array([[146, 70, 192], [110, 156, 66], [84, 138, 210], [181, 83, 40], [45, 50, 184]])
+        bar_colors = np.array([[110, 156, 66], [66, 114, 194], [198, 108, 58], [66, 72, 200], [162, 162, 42]])
 
         # Use bar color to identify levels 0-7
         bar_color = observation[183][16]  # static location of bar
@@ -65,7 +65,8 @@ class Agent(object):
         spider_loc = np.array(np.where(observation == spider_colors[level])[:2])
 
         spider_loc = np.delete(spider_loc, [np.where(spider_loc == 183), np.where(spider_loc == 184)], axis=1)
-        centipede_loc = np.delete(centipede_loc, [np.where(centipede_loc == 183), np.where(centipede_loc == 184)], axis=1)
+        centipede_loc = np.delete(centipede_loc, [np.where(centipede_loc == 183), np.where(centipede_loc == 184)],
+                                  axis=1)
 
         # Identify player location by checking size
         player_loc = []
@@ -82,8 +83,8 @@ class Agent(object):
         if centipede_action is not None:
             return centipede_action
 
-
-        '''if level == 3:
+        '''print(level)
+        if level == 4:
             # Sanity check graph
             plt.scatter(mushroom_loc[1], mushroom_loc[0], alpha=.5, color="orange")
             plt.scatter(centipede_loc[1], centipede_loc[0], alpha=.5, color="pink")
@@ -123,8 +124,8 @@ class Agent(object):
 
         # If available, shoot the spider
         if len(player_loc) != 0:
-            for x in spider_loc[1]:
-                for y in spider_loc[0]:
+            for x in flip(spider_loc[1]):
+                for y in flip(spider_loc[0]):
                     if player_loc[1] - 1 < x < player_loc[1] + 4 and player_loc[0] > y:
                         return 1
 
@@ -161,11 +162,10 @@ class Agent(object):
                             return 13
         '''
 
-        # Fire at the centipede, if possible
         if len(player_loc) != 0:
-            for x in centipede_loc[1]:
-                for y in centipede_loc[0]:
-                    if player_loc[0] > y and player_loc[1]-2 < x < player_loc[1]+5:
+            for x in flip(centipede_loc[1]):
+                for y in flip(centipede_loc[0]):
+                    if player_loc[0] > y and player_loc[1] - 1 < x < player_loc[1] + 4:
                         # print("fire")
                         return 1
                     elif player_loc[0] > y and x < player_loc[1] + 2:
@@ -174,21 +174,22 @@ class Agent(object):
                     elif player_loc[0] > y and player_loc[1] + 1 < x:
                         # print("right")
                         return 3
-                    elif player_loc[0]+2 < y:
+                    elif player_loc[0] + 2 < y:
                         return 5
         return 0
-    
+
         # return self.action_space.sample()
+
 
 def collision(player_loc, enemy_loc):
     if len(player_loc) != 0:
-        for x in enemy_loc[1]:
-            for y in enemy_loc[0]:
+        for x in flip(enemy_loc[1]):
+            for y in flip(enemy_loc[0]):
                 if player_loc[1] - 10 < x < player_loc[1] + 13 and player_loc[0] - 10 < y < player_loc[0] + 18:
-                    if x < player_loc[1] and y > player_loc[0] + 1:
+                    if x < player_loc[1] and y > player_loc[0]:
                         # avoid by moving right
                         return 3
-                    elif player_loc[1] + 3 < x and y > player_loc[0] + 1:
+                    elif player_loc[1] + 3 < x and y > player_loc[0]:
                         # avoid by moving left
                         return 4
                     elif y > player_loc[0] + 8:
