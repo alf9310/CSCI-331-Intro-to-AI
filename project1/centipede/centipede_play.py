@@ -1,3 +1,11 @@
+"""
+This script creates and runs the agent to play centipede.
+
+Usage: centipede_play.py
+Editors:    Thalia Kennedy  tgk1703@rit.edu
+            Audrey Fuller   alf9310@rit.edu
+CSCI-331 Intro to AI
+"""
 import argparse
 import sys
 import pdb
