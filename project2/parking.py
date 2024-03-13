@@ -23,6 +23,8 @@ class Problem:
             cars_per_action: aka number of attendants, or maximum number
                 of cars that can move on each step.
         """
+        self.initial = initial
+        self.cars_per_action = cars_per_action
         
 
     def actions(self, state):
@@ -41,13 +43,26 @@ class Problem:
         is a legal action
         So, you must return a *list* of actions, where each action
         is a *set* of car/action pairs. 
-        """ 
+        """
+        actionList = []
+        for car in range(state.n):
+            for action in ["up", "down", "left", "right", "stay"]:
+                '''unsure starting here if this is correct tbh'''
+                for i in range(self.cars_per_action):
+                    move = {(car, action)}
+                    if(len(move) == self.cars_per_action):
+                        actionList.append(move)
+        return actionList
 
     def result(self, state, action):
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
-
+        actionList = self.actions(state)
+        new_state = state
+        for i in actionList:
+            print(actionList[2])
+        return new_state
 
 
     def goal_test(self, state):
