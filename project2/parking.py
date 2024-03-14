@@ -7,7 +7,8 @@ import numpy as np
 import pdb
 import random
 import sys
-import time 
+import time
+import copy
 
 
 class Problem:
@@ -68,11 +69,15 @@ class Problem:
         '''If less than a moves are possible, add applicable "stays" to the move set'''
         if len(move) != 0:
             car_num = next(iter(move))[0]
-            while len(move) != 3:
+            while len(move) < 3:
                 for i in state.cars:
-                    if car_num != i:
-                        move.add((i, "stay"))
+                    '''print(state.cars_inv[i])
+                    print(i)'''
+                    if car_num != state.cars_inv[i]:
+                        move.add((state.cars_inv[i], "stay"))
                         car_num = next(iter(move))[0]
+                        if len(move) == 3:
+                            break
             actionList.append(set(move))
             move.clear()
         return actionList
@@ -82,10 +87,14 @@ class Problem:
         action in the given state. The action must be one of
         self.actions(state)."""
         actionList = self.actions(state)
-        new_state = state
         for i in actionList:
-            '''print(actionList)'''
-        return new_state
+            action = next(iter(i))
+            car = action[0]
+            direction = action[1]
+            print(car)
+            print(direction)
+            print(state.cars[car])
+        return state
 
 
     def goal_test(self, state):
