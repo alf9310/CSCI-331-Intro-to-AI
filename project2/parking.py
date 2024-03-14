@@ -45,13 +45,36 @@ class Problem:
         is a *set* of car/action pairs. 
         """
         actionList = []
-        for car in range(state.n):
-            for action in ["up", "down", "left", "right", "stay"]:
-                '''unsure starting here if this is correct tbh'''
-                for i in range(self.cars_per_action):
-                    move = {(car, action)}
-                    if(len(move) == self.cars_per_action):
-                        actionList.append(move)
+        '''The list of action sets'''
+        move = set()
+        '''Sets of a actions that can be performed'''
+        for i in range(state.n):
+            '''check the whole board (ixj)'''
+            for j in range(state.n):
+                if (i, j) in state.cars:
+                    '''If you find a car'''
+                    '''Check up, then down, then left, then right'''
+                    if i != 0 and (i-1,j) not in state.cars and (i-1, j) not in state.barriers:
+                        move.add((state.cars_inv[(i,j)], "up"))
+                    elif i != state.n-1 and (i+1, j) not in state.cars and (i+1,j) not in state.barriers:
+                        move.add((state.cars_inv[(i,j)], "down"))
+                    elif j != 0 and (i, j-1) not in state.cars and (i, j-1) not in state.barriers:
+                        move.add((state.cars_inv[(i,j)], "left"))
+                    elif j != state.n-1 and (i, j+1) not in state.cars and (i, j+1) not in state.barriers:
+                        move.add((state.cars_inv[(i,j)], "right"))
+                    if len(move) == self.cars_per_action:
+                        actionList.append(set(move))
+                        move.clear()
+        '''If less than a moves are possible, add applicable "stays" to the move set'''
+        if len(move) != 0:
+            car_num = next(iter(move))[0]
+            while len(move) != 3:
+                for i in state.cars:
+                    if car_num != i:
+                        move.add((i, "stay"))
+                        car_num = next(iter(move))[0]
+            actionList.append(set(move))
+            move.clear()
         return actionList
 
     def result(self, state, action):
@@ -61,7 +84,7 @@ class Problem:
         actionList = self.actions(state)
         new_state = state
         for i in actionList:
-            print(actionList[2])
+            '''print(actionList)'''
         return new_state
 
 
