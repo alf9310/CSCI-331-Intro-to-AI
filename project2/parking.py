@@ -55,10 +55,10 @@ class Problem:
                 if (i, j) in state.cars:
                     '''If you find a car'''
                     '''Check up, then down, then left, then right'''
-                    if i != 0 and (i-1,j) not in state.cars and (i-1, j) not in state.barriers:
-                        move.add((state.cars_inv[(i,j)], "up"))
+                    if i != 0 and (i-1, j) not in state.cars and (i-1, j) not in state.barriers:
+                        move.add((state.cars_inv[(i, j)], "up"))
                     elif i != state.n-1 and (i+1, j) not in state.cars and (i+1,j) not in state.barriers:
-                        move.add((state.cars_inv[(i,j)], "down"))
+                        move.add((state.cars_inv[(i, j)], "down"))
                     elif j != 0 and (i, j-1) not in state.cars and (i, j-1) not in state.barriers:
                         move.add((state.cars_inv[(i,j)], "left"))
                     elif j != state.n-1 and (i, j+1) not in state.cars and (i, j+1) not in state.barriers:
@@ -86,16 +86,27 @@ class Problem:
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
-        actionList = self.actions(state)
-        for i in actionList:
-            action = next(iter(i))
-            car = action[0]
-            direction = action[1]
-            print(car)
-            print(direction)
-            print(state.cars[car])
-        return state
+        new_state = state
+        for x in action:
+            car = x[0]
+            action_dir = x[1]
+            position = state.cars[car]
+            if action_dir == "up":
+                new_pos = (position[0]-1, position[1])
+            elif action_dir == "down":
+                new_pos = (position[0]+1, position[1])
+            elif action_dir == "left":
+                new_pos = (position[0], position[1]-1)
+            elif action_dir == "right":
+                new_pos = (position[0], position[1]+1)
+            else:
+                new_pos = (position[0], position[1])
 
+            new_state.cars_inv[position] = None
+            # unsure if this line is needed...
+            new_state.cars_inv[new_pos] = car
+            new_state.cars[car] = new_pos
+        return new_state
 
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
