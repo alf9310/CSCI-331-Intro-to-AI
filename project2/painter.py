@@ -22,10 +22,10 @@ def recombine(
 	"""
 
 	# Generate slicing rectangle dimentions & location 
-	width = random.randrange(1, im1.shape[1])
-	height = random.randrange(1, im1.shape[0])
-	top = random.randrange(1, im1.shape[1] - width)
-	left = random.randrange(1, im1.shape[1] - height)
+	width = random.randrange(10, im1.shape[1])
+	height = random.randrange(10, im1.shape[0])
+	left = random.randrange(0, im1.shape[1] - width)
+	top = random.randrange(0, im1.shape[0] - height)
 
 	# Create a new images
 	new_im1 = np.copy(im1)
@@ -69,61 +69,163 @@ def evaluate(im: np.ndarray):
 		Since art is subjective, you have complete
 		freedom to implement this however you like.
 	"""
-	# Find images with the most amount of pastel colors
-	return len(np.unique(im))
+	# Define the range of RGB values that represent purple
+	purple_lower = np.array([100, 0, 100])  # Adjust lower bound as needed
+	purple_upper = np.array([255, 100, 255])  # Adjust upper bound as needed
+
+	# Filter pixels that fall within the purple range
+	purple_mask = np.all((im >= purple_lower) & (im <= purple_upper), axis=-1)
+
+	# Count the number of purple pixels
+	num_purple_pixels = np.sum(purple_mask)
+
+	return num_purple_pixels
+	
+	'''
+	# Calculate the difference between each RGB component and the maximum component
+	diff_max_r = np.abs(im[:, :, 0] - np.max(im, axis=2))
+	diff_max_g = np.abs(im[:, :, 1] - np.max(im, axis=2))
+	diff_max_b = np.abs(im[:, :, 2] - np.max(im, axis=2))
+
+	# Calculate the maximum difference across RGB components for each pixel
+	max_diff = np.max(np.stack((diff_max_r, diff_max_g, diff_max_b), axis=2), axis=2)
+
+	# Determine pastel pixels where the maximum difference is below a threshold
+	pastel_pixels = max_diff < 70
+
+	# Count the number of pastel pixels
+	return np.sum(pastel_pixels)
+	'''
+	
+	# Count the number of green pixels
+	green_pixels = np.sum(im[:, :, 1] > im[:, :, 0])
+	green_pixels = np.sum(im[:, :, 1] > im[:, :, 2])
+
+    # Count the number of non-green pixels
+	non_green_pixels = np.sum(im[:, :, 1] <= im[:, :, 0])
+	non_green_pixels = np.sum(im[:, :, 1] <= im[:, :, 2])
+
+    # Calculate fitness based on the difference between green and non-green pixels
+	fitness = green_pixels - non_green_pixels
+	if fitness == None:
+		fitness = 0
+	return fitness
+	
+	'''
+	# Flatten the image array to a 2D array of RGB values
+	flattened_im = im.reshape(-1, im.shape[-1])
+
+	# Filter colors where the red channel is greater than the other channels
+	red_colors = flattened_im[(flattened_im[:, 0] > flattened_im[:, 1]) & (flattened_im[:, 0] > flattened_im[:, 2])]
+
+	# Find unique red colors
+	unique_red_colors = np.unique(red_colors, axis=0)
+
+	# Count the number of unique red colors
+	return len(unique_red_colors)
+	'''
+	'''
+	# Count the number of red pixels
+	red_pixels = np.sum(im[:, :, 0] > im[:, :, 1])
+	red_pixels = np.sum(im[:, :, 0] > im[:, :, 2])
+
+    # Count the number of non-red pixels
+	non_red_pixels = np.sum(im[:, :, 0] <= im[:, :, 1])
+	non_red_pixels = np.sum(im[:, :, 0] <= im[:, :, 2])
+
+    # Calculate fitness based on the difference between red and non-red pixels
+	fitness = red_pixels - non_red_pixels
+	if fitness == None:
+		fitness = 0
+	return fitness
+	'''
+	'''
+	# Find images with the most amount of red colors
+	fitness = 0
+	# Flatten the bitmap to a 2D array of RGB values
+	flattened_im = im.reshape(-1, im.shape[-1])
+	colors = np.unique(flattened_im, axis = 0)
+	for color in colors:
+		if color[0] > color [1] and color[0] > color [2]:
+			fitness += 1
+		else:
+			fitness -= 1
+	return fitness
+	'''
+	'''
+		# Define threshold for pastel colors (lightness)
+		lightness_threshold = 0.7
+		
+		# Calculate lightness
+		lightness = (max(color) + min(color)) / 2
+		print(lightness)
+		
+		# Check if the color is pastel based on lightness
+		if lightness < lightness_threshold:
+			fitness += 1
+		'''
+
+
 
 def main():
 	parser = argparse.ArgumentParser(
     	prog='painter',
     	description='creates paintings according to a genetic algorithm'
 	)
-
 	parser.add_argument('-g', '--generations', default=100, help="The number of generations to run", type=int)
 	parser.add_argument('-p', '--pools', default=10, help="The size of the pool", type=int)
 	parser.add_argument('-m', '--mutation', default=.2, help="The chance of a mutation", type=float)
 	parser.add_argument('-r', '--recombine', default = 2, help="The number of pairs to recombine in each generation", type=int)
 	args = parser.parse_args()
 
+	# Generate the pool of red and blue images 
 	red = np.zeros((400,800,3))
 	red[:,:,0] = 255
-
-	plt.imsave("red.tiff", red/255)
-
 	blue = np.zeros((400,800,3))
 	blue[:,:,2] = 255
-
-	
 	pool = [red, blue]
 
-	for i in range(args.generations):
-		gen_pool = []
-		if i == 0:
-			for j in range(args.pools):
-				child = recombine(pool[0], pool[1])
-				gen_pool += child
-		else:
-			#each loop gives us a new pair of parents
-			for j in range(0, args.recombine*2, 2):
-				#make as many children as needed
-				for children in range(int(args.pools/args.recombine)):
-					child = recombine(pool[j], pool[j+1])
-					gen_pool.append(child)
+	# Genetic algorithm loop
+	for generation in range(args.generations):
+		# Randomise pool order in case children have equal fitness
+		random.shuffle(pool)
+		# Sort the pool based on evaluations (more fit first)
+		pool.sort(reverse=True, key=evaluate)
 
-			#make any leftover children
-			for j in range(args.pools%args.recombine):
-				child = recombine(pool[0], pool[1])
-				gen_pool.append(child)
+		# Generate new pool for recombined images
+		new_pool = []
+
+		# Recombine
+		for i in range(args.recombine):
+			# Randomly select two parents from the pool
+			parent1, parent2 = random.sample(pool, 2)
+			# Perform recombination
+			children = recombine(parent1, parent2)
+			new_pool.extend(children)
+
+		# Mutate
+		for i in range(len(new_pool)):
+			if random.random() < args.mutation:
+				new_pool[i] = mutate(new_pool[i])
+
+		# Merge current pool and new pool
+		pool.extend(new_pool)
+
+		# Select top pools
+		pool = sorted(pool, key=evaluate, reverse=True)[:args.pools]
 		
-		#shuffle to reduce homogeneity in the case of equally fit children
-		random.shuffle(gen_pool)
-		#sort by most fit
-		gen_pool.sort(reverse=True, key=evaluate)
-		pool = gen_pool
-		
-	# View the image
+	# Save the top 3 images
+	plt.imsave("art1.tiff", pool[0]/255)
+	plt.imsave("art2.tiff", pool[1]/255)
+	plt.imsave("art3.tiff", pool[2]/255)
+
+	# View the top 3 images
 	plt.imshow(pool[0])
 	plt.show() 
-	
+	plt.imshow(pool[1])
+	plt.show() 
+	plt.imshow(pool[2])
+	plt.show() 
 
 	
 if __name__ == '__main__':
