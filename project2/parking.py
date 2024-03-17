@@ -8,7 +8,6 @@ import pdb
 import random
 import sys
 import time
-import copy
 
 
 class Problem:
@@ -45,42 +44,69 @@ class Problem:
         So, you must return a *list* of actions, where each action
         is a *set* of car/action pairs. 
         """
-        actionList = []
+        action_list = []
+        car_actions = []
         '''The list of action sets'''
-        move = set()
+        #move = set()
         '''Sets of a actions that can be performed'''
-        for i in range(state.n):
-            '''check the whole board (ixj)'''
-            for j in range(state.n):
-                if (i, j) in state.cars:
-                    '''If you find a car'''
-                    '''Check up, then down, then left, then right'''
-                    if i != 0 and (i-1, j) not in state.cars and (i-1, j) not in state.barriers:
-                        move.add((state.cars_inv[(i, j)], "up"))
-                    elif i != state.n-1 and (i+1, j) not in state.cars and (i+1,j) not in state.barriers:
-                        move.add((state.cars_inv[(i, j)], "down"))
-                    elif j != 0 and (i, j-1) not in state.cars and (i, j-1) not in state.barriers:
-                        move.add((state.cars_inv[(i,j)], "left"))
-                    elif j != state.n-1 and (i, j+1) not in state.cars and (i, j+1) not in state.barriers:
-                        move.add((state.cars_inv[(i,j)], "right"))
-                    if len(move) == self.cars_per_action:
-                        actionList.append(set(move))
-                        move.clear()
-        '''If less than a moves are possible, add applicable "stays" to the move set'''
-        if len(move) != 0:
-            car_num = next(iter(move))[0]
-            while len(move) < 3:
-                for i in state.cars:
-                    '''print(state.cars_inv[i])
-                    print(i)'''
-                    if car_num != state.cars_inv[i]:
-                        move.add((state.cars_inv[i], "stay"))
-                        car_num = next(iter(move))[0]
-                        if len(move) == 3:
-                            break
-            actionList.append(set(move))
-            move.clear()
-        return actionList
+        for car_num in range(len(state.cars)):
+            #print(car_num)
+            #print(state.cars[car_num])
+            x = state.cars[car_num][0]
+            y = state.cars[car_num][1]
+            if x != 0 and (x-1, y) not in state.cars and (x-1, y) not in state.barriers:
+                car_actions.append((car_num, "up"))
+            if x != state.n-1 and (x+1, y) not in state.cars and (x+1, y) not in state.barriers:
+                car_actions.append((car_num, "down"))
+            if y != 0 and (x, y-1) not in state.cars and (x, y-1) not in state.barriers:
+                car_actions.append((car_num, "left"))
+            if y != state.n-1 and (x, y+1) not in state.cars and (x, y+1) not in state.barriers:
+                car_actions.append((car_num, "right"))
+            car_actions.append((car_num, "stay"))
+            action_list.extend(car_actions)
+            #print(action_list)
+            car_actions = []
+        '''if len(action_list) % self.cars_per_action != 0:
+            action_list.extend([action_list[0]] * (self.cars_per_action - (len(action_list)%self.cars_per_action)))'''
+        move = set()
+        final_list = []
+        #print(action_list)
+        index = -1
+        index_list = []
+        #while len(action_list) != 0:
+        #index = -1
+        for car_move in action_list:
+         #       index += 1
+            #print(car_move)
+            in_move = False
+            if len(move) == 0:
+                move.add(car_move)
+                #action_list.pop(index)
+                index_list.append(index)
+            elif len(move) < self.cars_per_action:
+                for pairs in move:
+                    if car_move[0] == pairs[0]:
+                        in_move = True
+                if not in_move:
+                    move.add(car_move)
+                    #action_list.pop(index)
+                    index_list.append(index)
+            if len(move) == self.cars_per_action:
+             #   print(move)
+                final_list.append(set(move))
+                move.clear()
+            #for i in index_list:
+             #   action_list.pop(i)
+        #print(final_list)
+        #final_sets = [set(final_set) for final_set in final_list]
+        #print(final_sets)
+        '''action_split = [action_list[i:(i+self.cars_per_action)] for i in range(0, len(action_list), self.cars_per_action)]
+        print(action_split)
+        action_sets = [set(action_set) for action_set in action_split]
+        print(action_sets)'''
+        print(final_list)
+        breakpoint()
+        return final_list
 
     def result(self, state, action):
         """Return the state that results from executing the given
@@ -125,6 +151,11 @@ class Problem:
         is such that the path doesn't matter, this function will only look at
         state2. If the path does matter, it will consider c and maybe state1
         and action. The default method costs 1 for every step in the path."""
+        '''for x in action:
+            print(x)
+            if x[1] != "stay":
+                c = c'''
+        #print("end")
         return c + 1
 
     def value(self, state):
@@ -219,6 +250,7 @@ class Node:
 
     def solution(self):
         """Return the sequence of actions to go from the root to this node."""
+        print("test")
         return [node.action for node in self.path()[1:]]
 
     def path(self):
