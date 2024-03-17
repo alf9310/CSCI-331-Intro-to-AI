@@ -64,19 +64,9 @@ class Problem:
                 car_actions[car_num].append((car_num, "right"))
             while len(car_actions[car_num]) < 5:
                 car_actions[car_num].append((car_num, "stay"))
-            #car_actions[car_num].append(car_num, "stay")
-            #action_list.extend(car_actions)
-            #print(action_list)
-            #car_actions = []
-        #print(action_list)
 
-
-        #print(action_set)
-        #print(car_actions)
         np_action = np.array(car_actions, dtype='int, U6')
-        #print(np_action)
         action_set = np.array(np.meshgrid(*np_action)).T.reshape(-1, state.n)
-        #print(action_set)
 
         fixed_set = []
         for sets in action_set:
