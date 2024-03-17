@@ -44,14 +44,9 @@ class Problem:
         So, you must return a *list* of actions, where each action
         is a *set* of car/action pairs. 
         """
-        action_list = []
         car_actions = []
         for car_num in range(len(state.cars)):
-            #print(car_num)
-            #print(state.cars[car_num])
             car_actions.append([(car_num, "stay")])
-            #print(car_num)
-            #print(car_actions)
             x = state.cars[car_num][0]
             y = state.cars[car_num][1]
             if x != 0 and (x-1, y) not in state.cars and (x-1, y) not in state.barriers:
@@ -67,6 +62,7 @@ class Problem:
 
         np_action = np.array(car_actions, dtype='int, U6')
         action_set = np.array(np.meshgrid(*np_action)).T.reshape(-1, state.n)
+        #print(action_set)
 
         fixed_set = []
         for sets in action_set:
@@ -74,7 +70,6 @@ class Problem:
             for act in sets:
                 if act[1] != "stay":
                     count += 1
-                #count += 1
             if self.cars_per_action >= count > 0:
                 fixed_set.append(sets.tolist())
         actually_fixed_set = []
@@ -82,8 +77,6 @@ class Problem:
             if sets not in actually_fixed_set:
                 actually_fixed_set.append(sets)
         fixed_set = actually_fixed_set
-
-        #print(fixed_set)
 
         final_fix = []
         for sets in fixed_set:
@@ -101,38 +94,40 @@ class Problem:
 
         fixed_set = final_fix
         final_fix = []
-        for sets in fixed_set:
-            coords = []
-            keep = True
-            for actions in sets:
-                if actions[1] == "down":
-                    if (state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1) in coords:
-                        keep = False
+        if self.cars_per_action > 1:
+            for sets in fixed_set:
+                coords = []
+                keep = True
+                for actions in sets:
+                    if actions[1] == "down":
+                        if (state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1) in coords:
+                            keep = False
+                        else:
+                            coords.append((state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1))
+                    elif actions[1] == "up":
+                        if (state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]) in coords:
+                            keep = False
+                        else:
+                            coords.append((state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]))
+                    elif actions[1] == "left":
+                        if (state.cars[actions[0]][0], state.cars[actions[0]][1] - 1) in coords:
+                            keep = False
+                        else:
+                            coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] - 1))
+                    elif actions[1] == "right":
+                        if (state.cars[actions[0]][0], state.cars[actions[0]][1] + 1) in coords:
+                            keep = False
+                        else:
+                            coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] + 1))
                     else:
-                        coords.append((state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1))
-                elif actions[1] == "up":
-                    if (state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]) in coords:
-                        keep = False
-                    else:
-                        coords.append((state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]))
-                elif actions[1] == "left":
-                    if (state.cars[actions[0]][0], state.cars[actions[0]][1] - 1) in coords:
-                        keep = False
-                    else:
-                        coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] - 1))
-                elif actions[1] == "right":
-                    if (state.cars[actions[0]][0], state.cars[actions[0]][1] + 1) in coords:
-                        keep = False
-                    else:
-                        coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] + 1))
-                else:
-                    if state.cars[actions[0]] in coords:
-                        keep = False
-                    else:
-                        coords.append(state.cars[actions[0]])
-            if keep:
-                final_fix.append(sets)
-        #print(final_fix)
+                        if state.cars[actions[0]] in coords:
+                            keep = False
+                        else:
+                            coords.append(state.cars[actions[0]])
+                if keep:
+                    final_fix.append(sets)
+        else:
+            final_fix = fixed_set
         return final_fix
 
 
