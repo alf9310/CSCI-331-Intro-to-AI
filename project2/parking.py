@@ -1,4 +1,5 @@
 import argparse
+import copy
 from collections import deque
 import functools
 import heapq
@@ -25,7 +26,6 @@ class Problem:
         """
         self.initial = initial
         self.cars_per_action = cars_per_action
-        
 
     def actions(self, state):
         """Return the actions that can be executed in the given
@@ -46,73 +46,111 @@ class Problem:
         """
         action_list = []
         car_actions = []
-        '''The list of action sets'''
-        #move = set()
-        '''Sets of a actions that can be performed'''
         for car_num in range(len(state.cars)):
             #print(car_num)
             #print(state.cars[car_num])
+            car_actions.append([(car_num, "stay")])
+            #print(car_num)
+            #print(car_actions)
             x = state.cars[car_num][0]
             y = state.cars[car_num][1]
             if x != 0 and (x-1, y) not in state.cars and (x-1, y) not in state.barriers:
-                car_actions.append((car_num, "up"))
+                car_actions[car_num].append((car_num, "up"))
             if x != state.n-1 and (x+1, y) not in state.cars and (x+1, y) not in state.barriers:
-                car_actions.append((car_num, "down"))
+                car_actions[car_num].append((car_num, "down"))
             if y != 0 and (x, y-1) not in state.cars and (x, y-1) not in state.barriers:
-                car_actions.append((car_num, "left"))
+                car_actions[car_num].append((car_num, "left"))
             if y != state.n-1 and (x, y+1) not in state.cars and (x, y+1) not in state.barriers:
-                car_actions.append((car_num, "right"))
-            car_actions.append((car_num, "stay"))
-            action_list.extend(car_actions)
+                car_actions[car_num].append((car_num, "right"))
+            while len(car_actions[car_num]) < 5:
+                car_actions[car_num].append((car_num, "stay"))
+            #car_actions[car_num].append(car_num, "stay")
+            #action_list.extend(car_actions)
             #print(action_list)
-            car_actions = []
-        '''if len(action_list) % self.cars_per_action != 0:
-            action_list.extend([action_list[0]] * (self.cars_per_action - (len(action_list)%self.cars_per_action)))'''
-        move = set()
-        final_list = []
+            #car_actions = []
         #print(action_list)
-        index = -1
-        index_list = []
-        #while len(action_list) != 0:
-        #index = -1
-        for car_move in action_list:
-         #       index += 1
-            #print(car_move)
-            in_move = False
-            if len(move) == 0:
-                move.add(car_move)
-                #action_list.pop(index)
-                index_list.append(index)
-            elif len(move) < self.cars_per_action:
-                for pairs in move:
-                    if car_move[0] == pairs[0]:
-                        in_move = True
-                if not in_move:
-                    move.add(car_move)
-                    #action_list.pop(index)
-                    index_list.append(index)
-            if len(move) == self.cars_per_action:
-             #   print(move)
-                final_list.append(set(move))
-                move.clear()
-            #for i in index_list:
-             #   action_list.pop(i)
-        #print(final_list)
-        #final_sets = [set(final_set) for final_set in final_list]
-        #print(final_sets)
-        '''action_split = [action_list[i:(i+self.cars_per_action)] for i in range(0, len(action_list), self.cars_per_action)]
-        print(action_split)
-        action_sets = [set(action_set) for action_set in action_split]
-        print(action_sets)'''
-        print(final_list)
-        breakpoint()
-        return final_list
+
+
+        #print(action_set)
+        #print(car_actions)
+        np_action = np.array(car_actions, dtype='int, U6')
+        #print(np_action)
+        action_set = np.array(np.meshgrid(*np_action)).T.reshape(-1, state.n)
+        #print(action_set)
+
+        fixed_set = []
+        for sets in action_set:
+            count = 0
+            for act in sets:
+                if act[1] != "stay":
+                    count += 1
+                #count += 1
+            if self.cars_per_action >= count > 0:
+                fixed_set.append(sets.tolist())
+        actually_fixed_set = []
+        for sets in fixed_set:
+            if sets not in actually_fixed_set:
+                actually_fixed_set.append(sets)
+        fixed_set = actually_fixed_set
+
+        #print(fixed_set)
+
+        final_fix = []
+        for sets in fixed_set:
+            new_set = []
+            for act in sets:
+                if len(new_set) != self.cars_per_action:
+                    if act[1] != 'stay':
+                        new_set.append(act)
+            if len(new_set) != self.cars_per_action:
+                for act in sets:
+                    if len(new_set) != self.cars_per_action:
+                        if act not in new_set:
+                            new_set.append(act)
+            final_fix.append(set(new_set))
+
+        fixed_set = final_fix
+        final_fix = []
+        for sets in fixed_set:
+            coords = []
+            keep = True
+            for actions in sets:
+                if actions[1] == "down":
+                    if (state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1) in coords:
+                        keep = False
+                    else:
+                        coords.append((state.cars[actions[0]][0] + 1, state.cars[actions[0]][1] + 1))
+                elif actions[1] == "up":
+                    if (state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]) in coords:
+                        keep = False
+                    else:
+                        coords.append((state.cars[actions[0]][0] - 1, state.cars[actions[0]][1]))
+                elif actions[1] == "left":
+                    if (state.cars[actions[0]][0], state.cars[actions[0]][1] - 1) in coords:
+                        keep = False
+                    else:
+                        coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] - 1))
+                elif actions[1] == "right":
+                    if (state.cars[actions[0]][0], state.cars[actions[0]][1] + 1) in coords:
+                        keep = False
+                    else:
+                        coords.append((state.cars[actions[0]][0], state.cars[actions[0]][1] + 1))
+                else:
+                    if state.cars[actions[0]] in coords:
+                        keep = False
+                    else:
+                        coords.append(state.cars[actions[0]])
+            if keep:
+                final_fix.append(sets)
+        #print(final_fix)
+        return final_fix
+
 
     def result(self, state, action):
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
-        new_state = state
+        new_state = copy.deepcopy(state)
         for x in action:
             car = x[0]
             action_dir = x[1]
@@ -128,9 +166,9 @@ class Problem:
             else:
                 new_pos = (position[0], position[1])
 
-            new_state.cars_inv[position] = None
+            #new_state.cars_inv[position] = None
             # unsure if this line is needed...
-            new_state.cars_inv[new_pos] = car
+            #new_state.cars_inv[new_pos] = car
             new_state.cars[car] = new_pos
         return new_state
 
@@ -151,11 +189,6 @@ class Problem:
         is such that the path doesn't matter, this function will only look at
         state2. If the path does matter, it will consider c and maybe state1
         and action. The default method costs 1 for every step in the path."""
-        '''for x in action:
-            print(x)
-            if x[1] != "stay":
-                c = c'''
-        #print("end")
         return c + 1
 
     def value(self, state):
@@ -250,7 +283,6 @@ class Node:
 
     def solution(self):
         """Return the sequence of actions to go from the root to this node."""
-        print("test")
         return [node.action for node in self.path()[1:]]
 
     def path(self):
