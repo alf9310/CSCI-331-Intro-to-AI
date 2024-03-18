@@ -151,9 +151,6 @@ class Problem:
             else:
                 new_pos = (position[0], position[1])
 
-            #new_state.cars_inv[position] = None
-            # unsure if this line is needed...
-            #new_state.cars_inv[new_pos] = car
             new_state.cars[car] = new_pos
         return new_state
 
@@ -184,7 +181,29 @@ class Problem:
         raise NotImplementedError
 
 def heuristic_dist(node):
-    raise NotImplementedError
+    state = node.state
+
+    cost = 0
+    for car in range(len(state.cars)):
+        col_dist = state.cars[car][1] - state.n-car-1
+        row_dist = len(state.cars) - state.n - 1
+        if col_dist > 0:
+            for carCheck in state.cars:
+                if state.cars[car][1] > carCheck[1] > state.n-car-1:
+                    cost += 1
+            for barrierCheck in state.barriers:
+                if state.cars[car][1] > barrierCheck[1] > state.n-car-1:
+                    cost += 1
+        else:
+            for carCheck in state.cars:
+                if state.cars[car][1] < carCheck[1] < state.n - car - 1:
+                    cost += 1
+            for barrierCheck in state.barriers:
+                if state.cars[car][1] < barrierCheck[1] < state.n-car-1:
+                    cost += 1
+        cost += row_dist + abs(col_dist)
+    return cost
+    #raise NotImplementedError
 # ___________________________________________________________________
 # You should not modify anything below the line (except for test
 # purposes, in which case you should repair it to the original state
