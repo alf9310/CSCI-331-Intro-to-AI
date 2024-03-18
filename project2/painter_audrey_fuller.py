@@ -1,3 +1,11 @@
+"""
+This script uses a genetic algorithm to generate art.
+
+Usage: painter_audrey_fuller.py (-h to view options)
+Editors:    Thalia Kennedy  tgk1703@rit.edu
+            Audrey Fuller   alf9310@rit.edu
+CSCI-331 Intro to AI
+"""
 import skimage.io as io
 import numpy as np
 from matplotlib import pyplot as plt
@@ -49,6 +57,7 @@ def mutate(im: np.ndarray) -> np.ndarray:
 		globally (i.e., everywhere it occurs in the image)
 		replace with a randomly chosen new color.
 	"""
+
 	# Find existing color in image and generate a new random one to replace it
 	color = im[random.randrange(0, im.shape[0])][random.randrange(0, im.shape[1])]
 	new_color = [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
@@ -69,103 +78,18 @@ def evaluate(im: np.ndarray):
 		Since art is subjective, you have complete
 		freedom to implement this however you like.
 	"""
+	
 	# Define the range of RGB values that represent purple
-	purple_lower = np.array([100, 0, 100])  # Adjust lower bound as needed
-	purple_upper = np.array([255, 100, 255])  # Adjust upper bound as needed
+	purple_lower = np.array([100, 0, 100])
+	purple_upper = np.array([255, 100, 255])
 
 	# Filter pixels that fall within the purple range
 	purple_mask = np.all((im >= purple_lower) & (im <= purple_upper), axis=-1)
 
 	# Count the number of purple pixels
-	num_purple_pixels = np.sum(purple_mask)
-
-	return num_purple_pixels
+	score = np.sum(purple_mask)
+	return score
 	
-	'''
-	# Calculate the difference between each RGB component and the maximum component
-	diff_max_r = np.abs(im[:, :, 0] - np.max(im, axis=2))
-	diff_max_g = np.abs(im[:, :, 1] - np.max(im, axis=2))
-	diff_max_b = np.abs(im[:, :, 2] - np.max(im, axis=2))
-
-	# Calculate the maximum difference across RGB components for each pixel
-	max_diff = np.max(np.stack((diff_max_r, diff_max_g, diff_max_b), axis=2), axis=2)
-
-	# Determine pastel pixels where the maximum difference is below a threshold
-	pastel_pixels = max_diff < 70
-
-	# Count the number of pastel pixels
-	return np.sum(pastel_pixels)
-	'''
-	
-	# Count the number of green pixels
-	green_pixels = np.sum(im[:, :, 1] > im[:, :, 0])
-	green_pixels = np.sum(im[:, :, 1] > im[:, :, 2])
-
-    # Count the number of non-green pixels
-	non_green_pixels = np.sum(im[:, :, 1] <= im[:, :, 0])
-	non_green_pixels = np.sum(im[:, :, 1] <= im[:, :, 2])
-
-    # Calculate fitness based on the difference between green and non-green pixels
-	fitness = green_pixels - non_green_pixels
-	if fitness == None:
-		fitness = 0
-	return fitness
-	
-	'''
-	# Flatten the image array to a 2D array of RGB values
-	flattened_im = im.reshape(-1, im.shape[-1])
-
-	# Filter colors where the red channel is greater than the other channels
-	red_colors = flattened_im[(flattened_im[:, 0] > flattened_im[:, 1]) & (flattened_im[:, 0] > flattened_im[:, 2])]
-
-	# Find unique red colors
-	unique_red_colors = np.unique(red_colors, axis=0)
-
-	# Count the number of unique red colors
-	return len(unique_red_colors)
-	'''
-	'''
-	# Count the number of red pixels
-	red_pixels = np.sum(im[:, :, 0] > im[:, :, 1])
-	red_pixels = np.sum(im[:, :, 0] > im[:, :, 2])
-
-    # Count the number of non-red pixels
-	non_red_pixels = np.sum(im[:, :, 0] <= im[:, :, 1])
-	non_red_pixels = np.sum(im[:, :, 0] <= im[:, :, 2])
-
-    # Calculate fitness based on the difference between red and non-red pixels
-	fitness = red_pixels - non_red_pixels
-	if fitness == None:
-		fitness = 0
-	return fitness
-	'''
-	'''
-	# Find images with the most amount of red colors
-	fitness = 0
-	# Flatten the bitmap to a 2D array of RGB values
-	flattened_im = im.reshape(-1, im.shape[-1])
-	colors = np.unique(flattened_im, axis = 0)
-	for color in colors:
-		if color[0] > color [1] and color[0] > color [2]:
-			fitness += 1
-		else:
-			fitness -= 1
-	return fitness
-	'''
-	'''
-		# Define threshold for pastel colors (lightness)
-		lightness_threshold = 0.7
-		
-		# Calculate lightness
-		lightness = (max(color) + min(color)) / 2
-		print(lightness)
-		
-		# Check if the color is pastel based on lightness
-		if lightness < lightness_threshold:
-			fitness += 1
-		'''
-
-
 
 def main():
 	parser = argparse.ArgumentParser(
@@ -197,9 +121,8 @@ def main():
 
 		# Recombine
 		for i in range(args.recombine):
-			# Randomly select two parents from the pool
+			# Randomly select two parents from the pool & recombine
 			parent1, parent2 = random.sample(pool, 2)
-			# Perform recombination
 			children = recombine(parent1, parent2)
 			new_pool.extend(children)
 
