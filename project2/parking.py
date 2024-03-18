@@ -1,3 +1,13 @@
+"""
+file: parking.py
+Authors: Audrey Fuller (alf9310@g.rit.edu), Thalia Kennedy (tgk1703@g.rit.edu)
+
+Program takes in user input to find a solution to the given parking garage problem with a
+specified search algorithm. Program takes and input and creates a cxc grid with c car,
+a attendants, and b barriers, then uses s search algorithm to find a solution. The goal state
+is when all cars have made it to the bottom row in reverse order.
+"""
+
 import argparse
 import copy
 from collections import deque
@@ -44,9 +54,9 @@ class Problem:
         So, you must return a *list* of actions, where each action
         is a *set* of car/action pairs. 
         """
-        car_actions = []
+        car_actions = []  # list of car actions
         for car_num in range(len(state.cars)):
-            car_actions.append([(car_num, "stay")])
+            car_actions.append([(car_num, "stay")])  # all cars can stay
             x = state.cars[car_num][0]
             y = state.cars[car_num][1]
             if x != 0 and (x-1, y) not in state.cars and (x-1, y) not in state.barriers:
@@ -61,14 +71,15 @@ class Problem:
                 car_actions[car_num].append((car_num, "stay"))
 
         np_action = np.array(car_actions, dtype='int, U6')
+        # finding all possible combinations for the car moves
         action_set = np.array(np.meshgrid(*np_action)).T.reshape(-1, state.n)
-        #print(action_set)
 
-        fixed_set = []
-        for sets in action_set:
+        fixed_set = []  # taking out things that don't belong
+        for sets in action_set:  # remove any action sets that have more than the allotted number
+            # of actions
             count = 0
             for act in sets:
-                if act[1] != "stay":
+                if act[1] != "stay":  # stay action will be delt with in a bit
                     count += 1
             if self.cars_per_action >= count > 0:
                 fixed_set.append(sets.tolist())
@@ -78,24 +89,24 @@ class Problem:
                 actually_fixed_set.append(sets)
         fixed_set = actually_fixed_set
 
-        final_fix = []
+        final_fix = []  # dealing with the sets now because we ignored "stay"
         for sets in fixed_set:
             new_set = []
             for act in sets:
                 if len(new_set) != self.cars_per_action:
                     if act[1] != 'stay':
                         new_set.append(act)
-            if len(new_set) != self.cars_per_action:
+            if len(new_set) != self.cars_per_action:  # adding the "stay" actions back in if needed
                 for act in sets:
                     if len(new_set) != self.cars_per_action:
                         if act not in new_set:
                             new_set.append(act)
-            final_fix.append(set(new_set))
+            final_fix.append(set(new_set))  # adding as a set to fit criteria
 
         fixed_set = final_fix
         final_fix = []
         if self.cars_per_action > 1:
-            for sets in fixed_set:
+            for sets in fixed_set:  # making sure actions don't cause collisions
                 coords = []
                 keep = True
                 for actions in sets:
@@ -135,7 +146,7 @@ class Problem:
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
-        new_state = copy.deepcopy(state)
+        new_state = copy.deepcopy(state)  # making a copy of the state to modify
         for x in action:
             car = x[0]
             action_dir = x[1]
@@ -151,7 +162,7 @@ class Problem:
             else:
                 new_pos = (position[0], position[1])
 
-            new_state.cars[car] = new_pos
+            new_state.cars[car] = new_pos  # new state is updated accordingly for each action
         return new_state
 
     def goal_test(self, state):
@@ -181,20 +192,24 @@ class Problem:
         raise NotImplementedError
 
 def heuristic_dist(node):
+    """The heuristic distance cost here is defined as the distance each car
+    is how many rows and columns each car is away from its goal spot. Objects
+    like other cars and barriers are also added to the cost as they cause
+    disruptions."""
     state = node.state
 
     cost = 0
     for car in range(len(state.cars)):
         col_dist = state.cars[car][1] - state.n-car-1
         row_dist = len(state.cars) - state.n - 1
-        if col_dist > 0:
+        if col_dist > 0:  # if the distance is negative, look left
             for carCheck in state.cars:
                 if state.cars[car][1] > carCheck[1] > state.n-car-1:
                     cost += 1
             for barrierCheck in state.barriers:
                 if state.cars[car][1] > barrierCheck[1] > state.n-car-1:
                     cost += 1
-        else:
+        else:  # if the distance is positive, look right
             for carCheck in state.cars:
                 if state.cars[car][1] < carCheck[1] < state.n - car - 1:
                     cost += 1
@@ -203,7 +218,6 @@ def heuristic_dist(node):
                     cost += 1
         cost += row_dist + abs(col_dist)
     return cost
-    #raise NotImplementedError
 # ___________________________________________________________________
 # You should not modify anything below the line (except for test
 # purposes, in which case you should repair it to the original state
