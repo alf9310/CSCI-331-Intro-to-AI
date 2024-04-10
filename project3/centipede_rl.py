@@ -12,8 +12,12 @@ import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
 import argparse
+# TODO Get rid of
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 env = gym.make("CartPole-v1")
+#env = gym.make('Centipede-v0')
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -24,6 +28,8 @@ plt.ion()
 
 # if GPU is to be used
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
+print(torch.version.cuda)
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -261,7 +267,7 @@ def train_model():
                 episode_durations.append(t + 1)
                 plot_durations()
                 break
-#train_model()
+train_model()
 torch.save(policy_net.state_dict(), args.save)
 
 print('Complete')
