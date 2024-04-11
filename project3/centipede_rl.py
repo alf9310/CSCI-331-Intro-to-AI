@@ -16,8 +16,12 @@ import argparse
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-env = gym.make("CartPole-v1")
-#env = gym.make('Centipede-v0')
+#env = gym.make("CartPole-v1")
+env = gym.make('Centipede-v0')
+#breakpoint()
+# Atari preprocessing wrapper (resizes screen to square)
+# env = gym.wrappers.AtariPreprocessing(env, grayscale_obs=True, grayscale_newaxis=False)
+#breakpoint()
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -28,8 +32,8 @@ plt.ion()
 
 # if GPU is to be used
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
-print(torch.version.cuda)
+#print(device)
+#print(torch.version.cuda)
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -55,16 +59,38 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
+        # Convolutional Model started code
+        #self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(8,8), stride=8)
+        #self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(4,4), stride=2)
+        #self.linear1 = nn.Linear(6912, n_actions)
+        #breakpoint()
+        self.conv1 = nn.Conv2d(in_channels=n_observations, out_channels=32, kernel_size=(3,3), stride=4)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(1,1), stride=2)
+        self.linear1 = nn.Linear(in_features=1280, out_features=n_actions)
+        
+        '''
         self.layer1 = nn.Linear(n_observations, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, n_actions)
+        '''
 
     # Called with either one element to determine next action, or a batch
-    # during optimization. Returns tensor([[left0exp,right0exp]...]).
+    # during optimization. Returns tensor([[lecft0exp,right0exp]...]).
     def forward(self, x):
+        # Convolutional Model started code
+        # 3 Dimensional x to utilize the GPU (first dimension is the batch)
+        #breakpoint()
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = torch.flatten(x, start_dim = 1)
+        x = F.relu(self.linear1(x))
+        return x
+        
+        '''
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)
+        '''
 
 # BATCH_SIZE is the number of transitions sampled from the replay buffer
 # GAMMA is the discount factor as mentioned in the previous section
@@ -85,6 +111,7 @@ LR = 1e-4
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
+#TODO turn state grayscale
 n_observations = len(state)
 
 parser = argparse.ArgumentParser(
@@ -117,12 +144,18 @@ def select_action(state):
         math.exp(-1. * steps_done / EPS_DECAY)
     steps_done += 1
     if sample > eps_threshold:
+        #print("sample > eps_threshold")
         with torch.no_grad():
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return policy_net(state).max(1)[1].view(1, 1)
+            #breakpoint()
+            #return policy_net(state).max(1)[1].view(1, 1)
+            #print(torch.argmax(policy_net(state)).view(1,1))
+            return torch.argmax(policy_net(state)).view(1,1)
     else:
+        #print("sample < eps_threshold")
+        #print(torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long))
         return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
 
 
@@ -202,10 +235,11 @@ def optimize_model():
 
 def run_model(count = 100):
     """You should probably not modify this, other than
-    to load qbert.
+    to load centipede.
     """
-    env = gym.make("CartPole-v1", render_mode="human")
-
+    #env = gym.make("CartPole-v1", render_mode="human")
+    env = gym.make('Centipede-v0', render_mode="human")
+    #breakpoint()
     # Initialize the environment and get it's state
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -218,6 +252,7 @@ def run_model(count = 100):
         if terminated:
             state = None
         else:
+            #observation = observation.mean(axis=2) # Conv netwr
             state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
         env.render()
         if done:
@@ -227,14 +262,20 @@ def train_model():
     """ You may want to modify this method: for instance,
     you might want to skip frames during training."""
     if torch.cuda.is_available():
-        num_episodes = 600
+        num_episodes = 100 #600
     else:
         num_episodes = 200
 
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
         state, info = env.reset()
+        #breakpoint()
+
+        #state =state.mean(axis=2) # Conv network
+        #breakpoint()
+
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        #breakpoint()
         for t in count():
             action = select_action(state)
             observation, reward, terminated, truncated, _ = env.step(action.item())
